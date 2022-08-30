@@ -5,6 +5,7 @@
 #define RAW_BUFFER_LENGTH 750   // bits do protocolo IR, um protocolo de 100 bits gera um array de 200 elementos ou seja 2x
 #define RECORD_GAP_MICROS 52000 // Tempo do gap em micros da gravação
 #define MARK_EXCESS_MICROS 20   // Sugerido pela lib para o módulo VS1838
+
 #include <IRremote.hpp>
 #include "LITTLEFS.h" // Sistema pra gravar na flash do esp
 
