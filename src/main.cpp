@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-
+#include "Control_IR.h"
 #define SSID "ESP32Server"
 #define PASSWORD "12345678"
 #define SERVER_PORT 80
