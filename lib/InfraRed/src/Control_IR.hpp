@@ -82,6 +82,7 @@ public:
             return false;
         }
         InfraRed::readData("/rawON.txt", on);
+        InfraRed::readData("/rawOFF.txt", off);
         InfraRed::readData("/rawMacro1.txt", temp1);
         InfraRed::readData("/rawMacro2.txt", temp2);
         InfraRed::readData("/rawMacro3.txt", temp3);
