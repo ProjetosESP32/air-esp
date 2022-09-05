@@ -1,4 +1,13 @@
-// @author Marcus Vinícius
+/**
+ * @file Control_IR.hpp
+ * @author Marcus Vinícius (marcaovini07@gmail.com)
+ * @brief Arquivo de gerência de infra vermelho de ar condicionado
+ * @version 0.1
+ * @date 2022-09-04
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include <Arduino.h>
 #define IR_RECEIVE_PIN 26 // D15
 #define IR_SEND_PIN 4     // D4
