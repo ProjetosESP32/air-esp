@@ -9,6 +9,9 @@
  *
  */
 #include <Arduino.h>
+#include <array>
+#include <algorithm>
+
 #define IR_RECEIVE_PIN 26 // D15
 #define IR_SEND_PIN 4     // D4
 #define REC_PIN 16
@@ -23,104 +26,109 @@
 #define RECORD_GAP_MICROS 52000 // Tempo do gap em micros da gravação
 #define MARK_EXCESS_MICROS 20   // Sugerido pela lib para o módulo VS1838
 #include <IRremote.hpp>
-#include "LITTLEFS.h" // Sistema para gravar na flash do esp
+#include "LITTLEFS.h"
+
+constexpr const char *RAWS_FILE = "raws.bin";
 
 class InfraRed
 {
 private:
-    uint8_t data[RAW_BUFFER_LENGTH][NUMBER_OF_RAWS];
+    std::array<std::array<uint8_t, RAW_BUFFER_LENGTH>, NUMBER_OF_RAWS> raws;
 
-    void readData(String path, uint8_t *raw)
-    {                                                      // Lê arquivos -> utilizando ponteiros para ser o mudar a variável e não sua cópia
-        String buffer_read;                                // String intermediária pois os dados são gravados em texto, não em int, sendo necessário conversão
-        File file = LITTLEFS.open(path, FILE_READ, false); // Abre aquivo com o nome definido no modo leitura
-        while (file.available())
-        {                                             // Enquando houver informação para ser lida retorna verdadeiro
-            buffer_read = file.readStringUntil('\n'); // Lê o arquivo até \n pra saber que é o fim da linha
-            *raw = buffer_read.toInt();               // passa o arquivo de String para int
-            raw++;                                    // incrementa endereço do ponteiro
+    void readRaws()
+    {
+        File file = LITTLEFS.open("raws.bin", FILE_READ, false);
+
+        while(file.available()) 
+        {
+            file.read();
         }
-        file.close(); // Fecha arquivo
+
+        file.close();
     }
 
-    void sendRaw(uint8_t *raw)
-    { // Função que envia sinal para o ar condicionado -> Utiliza ponteiros pois o array é muito grande
+    void writeRaws()
+    {
+        File file = LITTLEFS.open(RAWS_FILE, FILE_WRITE, true);
+
+        if (file.available())
+        {
+            for (auto &raw : raws)
+            {
+                file.write(raw.data(), RAW_BUFFER_LENGTH);
+            }
+        }
+
+        file.close();
+    }
+
+    void sendRaw(std::array<uint8_t, RAW_BUFFER_LENGTH> &raw)
+    {
         for (int i = 0; i < 7; i++)
         {
-            IrSender.sendRaw(raw, RAW_BUFFER_LENGTH, KHZ_START + i); // Array do sinal, tamanho do array, frequência do sinal
+            IrSender.sendRaw(raw.data(), RAW_BUFFER_LENGTH, KHZ_START + i);
             delay(5);
         }
     }
 
-    void writeData(String path, uint8_t *raw)
-    {                                                      // Usando ponteiro pois o array é muito grande
-        File file = LITTLEFS.open(path, FILE_WRITE, true); // Cria ou abre um arquivo com o nome definido no modo escrita
-        for (int i = 0; i < RAW_BUFFER_LENGTH; i++)
-        {                             // laço for que passa cada elemento do array para a flash
-            file.println(*(raw + i)); // Escreve cada valor por linha e incrementa endereço do ponteiro
-        }
-        file.close(); // fecha o arquivo
-    }
-
-    void registerRaw(uint8_t *raw)
+    void registerRaw(std::array<uint8_t, RAW_BUFFER_LENGTH> &raw)
     {
-        IrReceiver.compensateAndStoreIRResultInArray(raw); // Salva raw no seu respectivo array
+        IrReceiver.compensateAndStoreIRResultInArray(raw.data());
     }
 
 public:
     bool begin()
     {
         pinMode(REC_PIN, INPUT);
+
         if (!LITTLEFS.begin(true))
-        { // Inicia comunicação
+        {
             return false;
         }
-        for (int i = 0; i < NUMBER_OF_RAWS; i++)
-        {
-            char filename[10];
-            sprintf(filename, "raw%d.bin", i);
-            InfraRed::readData(filename, data[i]);
-        }
+        
+        InfraRed::readRaws();
+
         IrSender.begin(IR_SEND_PIN, false);
+
         return true;
     }
 
     bool initRecRaw()
     {
         IrReceiver.begin(IR_RECEIVE_PIN, 0);
-        uint8_t idRaw = 0;
+
+        int idRaw = 0;
         while (idRaw < NUMBER_OF_RAWS)
         {
             if (IrReceiver.decode())
             {
-                InfraRed::registerRaw(data[idRaw]); // Função que grava o raw
-                idRaw++;
+                InfraRed::registerRaw(raws[idRaw++]);
                 IrReceiver.resume();
             }
         }
-        for (int i = 0; i < NUMBER_OF_RAWS; i++)
-        {
-            char filename[10];
-            sprintf(filename, "raw%d.bin", i);
-            InfraRed::writeData(filename, data[i]);
-        }
+
+        InfraRed::writeRaws();
         IrReceiver.stop();
+
         return true;
     }
 
     void power(bool power)
     {
         if (power)
-            InfraRed::sendRaw(data[1]);
+            InfraRed::sendRaw(raws[1]);
         else
-            InfraRed::sendRaw(data[0]);
+            InfraRed::sendRaw(raws[0]);
     }
 
-    bool setTemperature(uint8_t temperature)
+    bool setTemperature(int temperature)
     {
-        temperature -= MIN_TEMPERATURE_VALUE;
-        InfraRed::sendRaw(data[temperature]);
+        if (MIN_TEMPERATURE_VALUE <= temperature && temperature <= MAX_TEMPERATURE_VALUE)
+        {
+            int index = temperature - (MIN_TEMPERATURE_VALUE - 2); // isso pois os index 0 e 1 são para desligar e ligar, respectivamente
+            InfraRed::sendRaw(raws[index]);
+        }
+
         return true;
     }
 };
-extern InfraRed Infra;
