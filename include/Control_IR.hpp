@@ -37,11 +37,14 @@ private:
 
     void readRaws()
     {
-        File file = LITTLEFS.open("raws.bin", FILE_READ, false);
+        File file = LITTLEFS.open(RAWS_FILE, FILE_READ, false);
 
-        while(file.available()) 
+        if (file.available())
         {
-            file.read();
+            for (auto &raw : raws)
+            {
+                file.read(raw.data(), RAW_BUFFER_LENGTH);
+            }
         }
 
         file.close();
@@ -82,10 +85,8 @@ public:
         pinMode(REC_PIN, INPUT);
 
         if (!LITTLEFS.begin(true))
-        {
             return false;
-        }
-        
+
         InfraRed::readRaws();
 
         IrSender.begin(IR_SEND_PIN, false);
