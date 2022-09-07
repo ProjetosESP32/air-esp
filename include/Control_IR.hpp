@@ -28,7 +28,7 @@
 #include <IRremote.hpp>
 #include "LITTLEFS.h"
 
-constexpr const char *RAWS_FILE = "raws.bin";
+constexpr char *RAWS_FILE = "raws.bin";
 
 class InfraRed
 {
