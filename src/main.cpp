@@ -1,9 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "Control_IR.hpp"
-#define SSID "ESP32Server"
-#define PASSWORD "12345678"
-#define SERVER_PORT 80
+
+constexpr char SSID[] = "ESP32Server";
+constexpr char PASSWORD[] = "12345678";
+constexpr int SERVER_PORT = 80;
 
 InfraRed Module;
 
@@ -28,7 +29,6 @@ void setup()
 
 void loop()
 {
-
   if (Serial.available())
   {
 
