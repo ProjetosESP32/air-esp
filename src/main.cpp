@@ -5,37 +5,79 @@
 #define PASSWORD "12345678"
 #define SERVER_PORT 80
 
+InfraRed Module;
+
 WiFiServer server(SERVER_PORT);
 
-int temperature = 24;
+// int temperature = 24;
 
 void setup()
 {
   Serial.begin(115200);
-  WiFi.mode(WIFI_AP);
+  Serial.println("Iniciando");
+  Serial.setTimeout(10);
+  /*WiFi.mode(WIFI_AP);
   WiFi.softAP(SSID, PASSWORD);
 
   IPAddress ip = WiFi.softAPIP();
   Serial.println(ip);
 
-  server.begin();
+  server.begin();*/
+  Module.begin();
 }
 
 void loop()
 {
-  WiFiClient client = server.available();
 
-  if (client)
+  if (Serial.available())
   {
-    while (client.connected())
+
+    String str = Serial.readString();
+
+    if (str == "gravar")
     {
-      if (client.available())
-      {
-        char c = client.read();
-        Serial.write(c);
-      }
+      Serial.println("Gravando");
+      Module.initRecRaw();
+      Serial.print("Gravou");
+      return;
     }
 
-    client.stop();
+    if (str == "liga")
+    {
+      Module.power(true);
+      return;
+    }
+
+    if (str == "desliga")
+    {
+      Module.power(false);
+      return;
+    }
+
+    if (str == "list")
+    {
+      Module.listdir();
+      return;
+    }
+    int temperature = str.toInt();
+    temperature = max(temperature, 18);
+    temperature = min(temperature, 25);
+    Module.setTemperature(temperature);
   }
+  delay(1);
+  /* WiFiClient client = server.available();
+
+ if (client)
+ {
+   while (client.connected())
+   {
+     if (client.available())
+     {
+       char c = client.read();
+       Serial.write(c);
+     }
+   }
+
+   client.stop();
+ }*/
 }

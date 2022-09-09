@@ -10,7 +10,6 @@
  */
 #include <Arduino.h>
 #include <array>
-#include <algorithm>
 
 #define IR_RECEIVE_PIN 26 // D15
 #define IR_SEND_PIN 4     // D4
@@ -26,9 +25,10 @@
 #define RECORD_GAP_MICROS 52000 // Tempo do gap em micros da gravação
 #define MARK_EXCESS_MICROS 20   // Sugerido pela lib para o módulo VS1838
 #include <IRremote.hpp>
-#include "LITTLEFS.h"
+#include "SPIFFS.h"
+#include "FS.h"
 
-constexpr char *RAWS_FILE = "raws.bin";
+constexpr char *RAWS_FILE = "/raws.bin";
 
 class InfraRed
 {
@@ -37,7 +37,7 @@ private:
 
     void readRaws()
     {
-        File file = LITTLEFS.open(RAWS_FILE, FILE_READ, false);
+        auto file = SPIFFS.open(RAWS_FILE, "r");
 
         if (file.available())
         {
@@ -52,14 +52,12 @@ private:
 
     void writeRaws()
     {
-        File file = LITTLEFS.open(RAWS_FILE, FILE_WRITE, true);
+        auto file = SPIFFS.open(RAWS_FILE, FILE_WRITE, true);
 
-        if (file.available())
+        Serial.println("writeRaws");
+        for (auto &raw : raws)
         {
-            for (auto &raw : raws)
-            {
-                file.write(raw.data(), RAW_BUFFER_LENGTH);
-            }
+            file.write(raw.data(), RAW_BUFFER_LENGTH);
         }
 
         file.close();
@@ -84,7 +82,7 @@ public:
     {
         pinMode(REC_PIN, INPUT);
 
-        if (!LITTLEFS.begin(true))
+        if (!SPIFFS.begin(true))
             return false;
 
         InfraRed::readRaws();
@@ -131,5 +129,38 @@ public:
         }
 
         return true;
+    }
+    bool listdir()
+    {                                 // Lista todos os arquivos que estão disponíveis
+        File root = SPIFFS.open("/"); // Abre o "diretório" onde estão os arquivos na SPIFFS
+
+        if (!root) // root retorna false caso haja erro
+        {
+            Serial.println(" - falha ao abrir o diretório");
+            return false;
+        }
+        File file = root.openNextFile(); // Abre o próximo arquivo
+        int qtdFiles = 0;                // variável que armazena a quantidade de arquivos que
+        //                    há no diretório informado.
+        while (file)
+        { // Enquanto houver arquivos no "diretório" que não foram vistos,
+            //                executa o laço de repetição.
+            Serial.print("FILE : ");
+            Serial.print(file.name()); // Imprime o nome do arquivo
+            Serial.print("\tSIZE : ");
+            Serial.println(file.size()); // Imprime o tamanho do arquivo
+            qtdFiles++;                  // Incrementa a variável de quantidade de arquivos
+            file = root.openNextFile();  // Relata o próximo arquivo do diretório e
+                                         //                              passa o retorno para a variável
+                                         //                              do tipo File.
+        }
+        if (qtdFiles == 0) // Se após a visualização de todos os arquivos do diretório
+                           //                      não houver algum arquivo, ...
+        {
+            // Avisa o usuário que não houve nenhum arquivo para ler e retorna false.
+            Serial.println("Nenhuma Gravação Disponível");
+            return false;
+        }
+        return true; // retorna true se não houver nenhum erro
     }
 };
