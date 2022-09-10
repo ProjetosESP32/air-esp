@@ -15,17 +15,19 @@
 
 #define IR_RECEIVE_PIN 26 // D15
 #define IR_SEND_PIN 4     // D4
-#define REC_PIN 16
+#define LED_BUILTIN 16    // RX2
 
 #define NUMBER_OF_RAWS 10
 #define MIN_TEMPERATURE_VALUE 18
 #define MAX_TEMPERATURE_VALUE 25
-#define KHZ_START 32
+#define KHZ_ONE 38
+#define KHZ_TWO 32
 
-// Os três próximos #define alteram alguns valores padrão da lib que não são funcionam com protocolos de ar condicionado
+// Os três próximos #define alteram alguns valores padrão da lib que não funcionam com protocolos de ar condicionado
 #define RAW_BUFFER_LENGTH 750   // bits do protocolo IR, um protocolo de 100 bits gera um array de 200 elementos ou seja 2x
 #define RECORD_GAP_MICROS 52000 // Tempo do gap em micros da gravação
 #define MARK_EXCESS_MICROS 20   // Sugerido pela lib para o módulo VS1838
+#define SEND_PWM_BY_TIMER
 #include <IRremote.hpp>
 
 constexpr char RAWS_FILE[] = "/raws.bin";
@@ -64,11 +66,9 @@ private:
 
     void sendRaw(std::array<uint8_t, RAW_BUFFER_LENGTH> &raw)
     {
-        for (int i = 0; i < 7; i++)
-        {
-            IrSender.sendRaw(raw.data(), RAW_BUFFER_LENGTH, KHZ_START + i);
-            delay(5);
-        }
+        IrSender.sendRaw(raw.data(), RAW_BUFFER_LENGTH, KHZ_ONE);
+        delay(5);
+        IrSender.sendRaw(raw.data(), RAW_BUFFER_LENGTH, KHZ_TWO);
     }
 
     void registerRaw(std::array<uint8_t, RAW_BUFFER_LENGTH> &raw)
@@ -79,21 +79,21 @@ private:
 public:
     bool begin()
     {
-        pinMode(REC_PIN, INPUT);
-
         if (!SPIFFS.begin(true))
+        {
             return false;
+        }
 
         InfraRed::readRaws();
 
-        IrSender.begin(IR_SEND_PIN, false);
+        IrSender.begin(IR_SEND_PIN, ENABLE_LED_FEEDBACK);
 
         return true;
     }
 
-    bool initRecRaw()
+    bool RecRaw()
     {
-        IrReceiver.begin(IR_RECEIVE_PIN, 0);
+        IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
 
         int idRaw = 0;
         while (idRaw < NUMBER_OF_RAWS)
@@ -137,10 +137,13 @@ public:
         if (!root)
         {
             Serial.println(" - falha ao abrir o diretório");
+
             return false;
         }
+
         File file = root.openNextFile();
         int qtdFiles = 0;
+
         while (file)
         {
             Serial.print("FILE : ");
@@ -150,12 +153,13 @@ public:
             qtdFiles++;
             file = root.openNextFile();
         }
+
         if (qtdFiles == 0)
         {
             Serial.println("Nenhuma Gravação Disponível");
             return false;
         }
+
         return true;
     }
 };
-extern InfraRed Infra;
