@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#define SSID "ESP32Server"
-#define PASSWORD "12345678"
-#define SERVER_PORT 80
+constexpr char SSID[] = "ESP32Server";
+constexpr char PASSWORD[] = "12345678";
+constexpr int SERVER_PORT = 80;
 
 WiFiServer server(SERVER_PORT);
 
@@ -27,14 +27,12 @@ void loop()
 
   if (client)
   {
-    while (client.connected())
+    if (client.available())
     {
-      if (client.available())
-      {
-        char c = client.read();
-        Serial.write(c);
-      }
+      temperature = client.parseInt();
     }
+
+    client.printf("%d\n", temperature);
 
     client.stop();
   }
