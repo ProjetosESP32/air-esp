@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include "Control_IR.hpp"
+#include <InfraRed.hpp>
 #define SSID "ESP32Server"
 #define PASSWORD "12345678"
 #define SERVER_PORT 80
@@ -9,20 +9,12 @@ InfraRed Infra;
 
 WiFiServer server(SERVER_PORT);
 
-// int temperature = 24;
-
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Iniciando");
   Serial.setTimeout(10);
-  /*WiFi.mode(WIFI_AP);
-  WiFi.softAP(SSID, PASSWORD);
 
-  IPAddress ip = WiFi.softAPIP();
-  Serial.println(ip);
-
-  server.begin();*/
   Infra.begin();
 }
 
@@ -35,49 +27,26 @@ void loop()
     if (str == "gravar")
     {
       Serial.println("Gravando");
-      Infra.RecRaw();
+      Infra.recRaws();
       Serial.print("Gravou");
       return;
     }
 
     if (str == "liga")
     {
-      Infra.power(true);
+      Infra.sendPower(true);
       return;
     }
 
     if (str == "desliga")
     {
-      Infra.power(false);
-      return;
-    }
-
-    if (str == "list")
-    {
-      Infra.listdir();
+      Infra.sendPower(false);
       return;
     }
 
     int temperature = str.toInt();
-    temperature = max(temperature, 18);
-    temperature = min(temperature, 25);
-    Infra.setTemperature(temperature);
+    Infra.sendTemperature(temperature);
   }
+
   delay(1);
-
-  /*WiFiClient client = server.available();
-
-  if (client)
-  {
-    while (client.connected())
-    {
-      if (client.available())
-      {
-        char c = client.read();
-        Serial.write(c);
-      }
-    }
-
-    client.stop();
-  }*/
 }
