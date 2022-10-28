@@ -19,10 +19,10 @@ void setup()
 
 void loop()
 {
-  netManager.serverTick([](int newTemp)
-                        { temperature = newTemp; },
-                        []()
-                        { return temperature; });
+  netManager.loop([](int newTemp)
+                  { temperature = newTemp; },
+                  []()
+                  { return temperature; });
 
   delay(10);
 }
