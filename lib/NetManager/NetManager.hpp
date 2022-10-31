@@ -11,11 +11,13 @@ private:
   String ssid;
   String password;
   WiFiServer server;
+  void (*onReceive)(int);
+  int (*onSend)(void);
 
 public:
   NetManager(int port, const String ssid, const String password);
-  void setup();
-  void loop(void (*onReceive)(int), int (*onSend)(void));
+  void setup(void (*onReceive)(int), int (*onSend)(void));
+  void loop();
 };
 
 #endif

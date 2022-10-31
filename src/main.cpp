@@ -10,19 +10,26 @@ NetManager netManager(SERVER_PORT, SSID, PASSWORD);
 
 int temperature = 24;
 
+void handleCommandReceive(int command)
+{
+  temperature = command;
+}
+
+int handleCommandSend()
+{
+  return temperature;
+}
+
 void setup()
 {
   Serial.begin(115200);
 
-  netManager.setup();
+  netManager.setup(handleCommandReceive, handleCommandSend);
 }
 
 void loop()
 {
-  netManager.loop([](int newTemp)
-                  { temperature = newTemp; },
-                  []()
-                  { return temperature; });
+  netManager.loop();
 
   delay(10);
 }

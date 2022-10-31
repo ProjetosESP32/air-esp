@@ -9,10 +9,12 @@ NetManager::NetManager(int port, const String _ssid, const String _password) : s
   password = _password;
 }
 
-void NetManager::setup()
+void NetManager::setup(void (*_onReceive)(int), int (*_onSend)(void))
 {
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid.c_str(), password.c_str());
+  onReceive = _onReceive;
+  onSend = _onSend;
 
 #ifdef NET_DEBUG
   auto ip = WiFi.softAPIP();
@@ -22,7 +24,7 @@ void NetManager::setup()
   server.begin();
 }
 
-void NetManager::loop(void (*onReceive)(int), int (*onSend)(void))
+void NetManager::loop()
 {
   auto client = server.available();
   int dataReceived = 0;
