@@ -4,7 +4,7 @@
 
 constexpr char SSID[] = "ESP32Server";
 constexpr char PASSWORD[] = "12345678";
-constexpr int SERVER_PORT = 80;
+constexpr int SERVER_PORT = 5000;
 
 NetManager netManager(SERVER_PORT, SSID, PASSWORD);
 
