@@ -16,10 +16,8 @@ void NetManager::setup(void (*_onReceive)(int), int (*_onSend)(void))
   onReceive = _onReceive;
   onSend = _onSend;
 
-#ifdef NET_DEBUG
   auto ip = WiFi.softAPIP();
   Serial.println(ip);
-#endif
 
   server.begin();
 }
