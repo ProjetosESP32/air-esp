@@ -1,41 +1,35 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include "NetManager.hpp"
 
-#define SSID "ESP32Server"
-#define PASSWORD "12345678"
-#define SERVER_PORT 80
+constexpr char SSID[] = "ESP32Server";
+constexpr char PASSWORD[] = "12345678";
+constexpr int SERVER_PORT = 5000;
 
-WiFiServer server(SERVER_PORT);
+NetManager netManager(SERVER_PORT, SSID, PASSWORD);
 
 int temperature = 24;
+
+void handleCommandReceive(int command)
+{
+  temperature = command;
+}
+
+int handleCommandSend()
+{
+  return temperature;
+}
 
 void setup()
 {
   Serial.begin(115200);
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(SSID, PASSWORD);
 
-  IPAddress ip = WiFi.softAPIP();
-  Serial.println(ip);
-
-  server.begin();
+  netManager.setup(handleCommandReceive, handleCommandSend);
 }
 
 void loop()
 {
-  WiFiClient client = server.available();
+  netManager.loop();
 
-  if (client)
-  {
-    while (client.connected())
-    {
-      if (client.available())
-      {
-        char c = client.read();
-        Serial.write(c);
-      }
-    }
-
-    client.stop();
-  }
+  delay(10);
 }
