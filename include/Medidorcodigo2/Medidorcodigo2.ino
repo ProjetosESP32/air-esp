@@ -62,7 +62,9 @@ void displayConfig()
 void setup() {
   Serial.begin(9600);
   Serial.println("Inicializando");
+  //inicia o sensor de corrente com os parametro de calibração
   emon1.current(35,2.5219);             // Current: input pin, calibration. 0.8387 anterior e posterior 
+  //configura a antena lora para 915 MHZ
   config(915);
 
   // Iniciamos o display
@@ -97,7 +99,8 @@ void medidor() {
 
   // Escrevemos a mensagem "Sending packet: " na primeira linha
    display.drawString(0, line, "Potencia: "); 
- 
+
+ //if para zerar a corrente tirando a margem de erro
   if(Irms<0.4 )
   {
   Irms=0; 
@@ -129,7 +132,7 @@ void medidor() {
   display.drawString(0, line * fontHeight,String(KWh));
   display.drawString(60, line * fontHeight,"KWh");
    
-
+  //Aki se faz o envio de 5 em 5 segundos
   if((millis() - millisFirebase) > 5000){
      String corrente= "";
      String consumo = "";
@@ -137,11 +140,13 @@ void medidor() {
      corrente.concat(Irms);
 
      String message =  String(KWh) + "?" + String(Irms);
- 
-     //getRTC();
+     //aki se pega o timestamp atual 
+     getRTC();
+     //prepara a mensagem e  coloca a mensagem na fila do lora
      enviarLoRa(timestamp, "arCondConsumoKWhCorrenteA", message);
+     //aki se envia todas as mensagens que estao na fila lora
      unQueueLoRa();
-    
+     // aki pega o time stamp atual para verificar quando vai ser a proxima leitura
      millisFirebase = millis();   
   }
 
@@ -157,7 +162,7 @@ void medidor() {
 }
 
 void loop() {
-
+  //função principal
   medidor();
  
   

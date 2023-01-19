@@ -42,17 +42,17 @@ struct RecvData
     unsigned long timestamp{};
     String recvMsg;
 };
-
+//atualiza o rtc interno
 void setRTC(time_t timeStamp){
   Serial.println("AtualizandoRTC: " + String(timeStamp));
   tv.tv_sec = timeStamp ; //coloca na variavel o timeStamp
   settimeofday(&tv, NULL); //Inseri no RTC o time Stamp certo
   }
-
+//pega o time stamp no rtc interno
 void getRTC(){
    timestamp = time(NULL);
   }
-
+//aki se tira a mensagem do vetor de controle baseado no timestamp da mensagem que seria seu ID
 void controleRetirarLoRa(int _timeStamp){
   
   for(int i = 0; i<11; i++){
@@ -68,6 +68,7 @@ void controleRetirarLoRa(int _timeStamp){
     }
   }
 
+//aki se grava a mensagem junto com o seu ID no vetor de controle 
 void controleGravarLoRa(unsigned long _timeStamp, String msg){
   
   for(int i =0; i< 11; i++){
@@ -82,7 +83,7 @@ void controleGravarLoRa(unsigned long _timeStamp, String msg){
         }
     }  
   }
-
+//aki se faz o envio da mensagem lora
 void sendLoRa(String msg){
   uint8_t data[RH_RF95_MAX_MESSAGE_LEN];
   memset(data, '\0', sizeof(data));
@@ -95,7 +96,7 @@ void sendLoRa(String msg){
   Serial.println("Enviou a mensagem: ");
   Serial.println(msg);
   }
-
+//aki se envia a confirmação para quem enviou a mensagem
 void sendConfirmation(String y){
   mac.toLowerCase();
   String msg1 = mac + "!" + gateway + "!" + "confirm" + "!" + y + "!OK";
@@ -103,7 +104,7 @@ void sendConfirmation(String y){
   Serial.println("Enviando Confirmacao");
   filaLoRa.enqueue(msg1);
   }
-
+//se envia todas as mensagem lora que estao na fila
 void unQueueLoRa(){
   while(!filaLoRa.isEmpty()){
     Serial.println("Tirando da fila");
@@ -111,14 +112,14 @@ void unQueueLoRa(){
     sendLoRa(msg1);
     }
   }
-
+//aki se monta a msg lora e coloca no vetor de controle
 void enviarLoRa(unsigned long timeStamp,String projName,String msg){
   mac.toLowerCase();
   msg = mac + "!" + gateway + "!" + projName + "!" + String(timeStamp) + "!" + msg;
   filaLoRa.enqueue(msg);
   controleGravarLoRa(timeStamp, msg);
   }
-
+// de tanto em tanto tempo se  verifica o vetor controle ver se tem alguma mensagem que nao foi confirmada, caso nao tenha sido confirmada ela e reenviada.
 void checarControle(){
   for(;;){
     getRTC();
@@ -145,7 +146,7 @@ void recvDataFactory(char *buf, RecvData &data)
         data.recvMsg = String(strtok(nullptr, ""));
 }
 
-
+//aki e a função de recebimento das mensagem LoRa
 void recv()
 {       
         if (rf95.available())
@@ -184,7 +185,7 @@ void recv()
                 }   
         }
     }
-
+//configuração da antena lora
 void loraConfig(const float& frequencia) {
     Serial.begin(115200);
     SPI.begin(5, 19, 27, 18);
@@ -215,5 +216,5 @@ void config(int frequencia){
  // oledMenu();
   tv.tv_sec = 1646092800 ; //coloca na variavel o timeStamp
   settimeofday(&tv, NULL); //Inseri no RTC o time Stamp certo
-  period = random(15,25) * 1000;
+  period = random(15,25) * 1000; // esta seri uma variavel para determinar um tempo especifico para envio das msgs lora mas nao esta em uso por enquanto
   }
